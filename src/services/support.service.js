@@ -1,5 +1,4 @@
 import { ai } from "./gemini.service.js"
-import { getSupportLevel } from "../utils/supportLevel.js"
 
 const VARIATION_SEEDS = [
   "Start with an open-ended question.",
@@ -15,37 +14,29 @@ function pickRandom(arr) {
   return arr[Math.floor(Math.random() * arr.length)]
 }
 
-function buildPrompt(toolId, supportLevel) {
+function buildPrompt(toolId, score, maxScore) {
   const variationHint = pickRandom(VARIATION_SEEDS)
 
   return `You are a warm, compassionate friend — not a therapist. Keep your response under 70 words.
 
-The user just completed: ${toolId}
-Support level needed: ${supportLevel}
+          The user just completed: ${toolId}
+          Their score: ${score} out of ${maxScore}
 
-Support level guide:
-- light check-in: easy, affirming, no assumptions of distress
-- gentle support: acknowledge mild heaviness, normalize feelings, offer encouragement  
-- extra care: acknowledge difficulty clearly, convey steady presence, gently encourage reaching out — no advice or solutions
+          Based on the score, infer the emotional support level needed:
+          - Low scores (bottom 25%): easy, affirming, no assumptions of distress
+          - Mid scores (25–60%): acknowledge mild heaviness, normalize feelings, offer encouragement
+          - High scores (top 40%): acknowledge difficulty clearly, convey steady presence, gently encourage reaching out — no advice or solutions
 
-Style instruction: ${variationHint}
+          Style instruction: ${variationHint}
 
-Rules:
-- Never mention scores, assessments, or results
-- No medical advice
-- Tone: calm, kind, non-alarming`
+          Rules:
+          - Never mention scores, assessments, or results
+          - No medical advice
+          - Tone: calm, kind, non-alarming`
 }
 
-/**
- * Generates support feedback based on the tool completed and the score user achieved.
- * @param {string} toolId 
- * @param {number} score 
- * @param {number} maxScore 
- * @returns {Promise<string>}
- */
 export async function generateSupportFeedback(toolId, score, maxScore) {
-  const supportLevel = getSupportLevel(score, maxScore)
-  const prompt = buildPrompt(toolId, supportLevel)
+  const prompt = buildPrompt(toolId, score, maxScore)
 
   const response = await ai.models.generateContent({
     model: "gemini-2.5-flash",
